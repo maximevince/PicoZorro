@@ -1,0 +1,14 @@
+firmware/target/
+firmware/boot.img
+firmware/picozorro.pzf
+firmware/*.uf2
+amiga/.toolchain/
+*.o
+__pycache__/
+*.pyc
+*.bak
+*-backups/
+*.lck
+*.kicad_prl
+fp-info-cache
+hardware/*/out/
