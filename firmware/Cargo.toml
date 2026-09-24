@@ -1,0 +1,51 @@
+[workspace]
+resolver = "2"
+members = ["pz-core", "pz-hal", "pz-app"]
+exclude = ["vendor/embassy-net-wiznet"]
+
+[workspace.package]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/maximevince/PicoZorro"
+authors = ["Maxime Vincent"]
+
+# Sizes and debug info as embassy recommends: the release image keeps its debug
+# info for defmt / probe-rs, the dev profile is optimised a little so that the
+# bus-slave timing is not wildly different from release.
+[profile.release]
+debug = 2
+lto = "fat"
+opt-level = "s"
+
+[profile.dev]
+opt-level = 1
+debug = 2
+
+# embassy git main for the USB host driver (embassy-rp usb::host,
+# embassy-usb-host), which no release has yet. The fork adds embassy-rp
+# fixes over upstream main: SIE_CTRL.SOF_SYNC for the host, the EPX yield
+# re-armed once a transaction runs, an RX timeout taken as "no response",
+# and BufferedUart TX across the ring's wrap. The versions match the
+# releases, so the crates keep their version requirements and the patch
+# swaps the source.
+# embassy-net-wiznet: main's driver plus PicoZorro's additions
+# (vendor/embassy-net-wiznet/CHANGELOG.md).
+[patch.crates-io]
+embassy-net-wiznet = { path = "vendor/embassy-net-wiznet" }
+embassy-embedded-hal = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-executor = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-futures = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-hal-internal = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-net = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-net-driver-channel = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-net-enc28j60 = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-rp = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-sync = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-time = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-time-driver = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-time-queue-utils = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-usb = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-usb-driver = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-usb-host = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+embassy-usb-logger = { git = "https://github.com/maximevince/embassy", rev = "f4780cf0cb6237b0dada1581897421ed3d18db06" }
+

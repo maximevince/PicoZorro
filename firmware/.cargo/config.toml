@@ -1,0 +1,18 @@
+# Everything in this workspace builds for the RP2350 (Cortex-M33) by default.
+# Host tests of pz-core: `cargo test-host` (alias below).
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+# SWD probe (debugprobe, J-Link, ...): flashes, then streams defmt logs over RTT.
+# Needs a probe-rs that knows the RP2350 (0.25 or later: `cargo install probe-rs-tools --locked`).
+runner = "probe-rs run --chip RP235x"
+# Without a probe: hold BOOTSEL, plug USB, then
+#   runner = "picotool load -u -v -x -t elf"
+
+[build]
+target = "thumbv8m.main-none-eabihf"
+
+[env]
+DEFMT_LOG = "info"
+
+[alias]
+test-host = "test -p pz-core --target x86_64-unknown-linux-gnu"

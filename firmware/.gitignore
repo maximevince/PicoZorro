@@ -1,0 +1,4 @@
+target/
+*.pzf
+boot.img
+*.uf2

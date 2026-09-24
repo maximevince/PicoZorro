@@ -1,0 +1,9 @@
+[package]
+name = "pz-core"
+version = "0.1.0"
+description = "PicoZorro slave behaviour independent of the RP2350: Autoconfig ROM, register window, pin map, MAC address"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]

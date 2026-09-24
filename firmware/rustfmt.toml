@@ -1,0 +1,3 @@
+# Matches the existing code: `cargo fmt` with defaults would reflow it.
+max_width = 120
+use_small_heuristics = "Max"
