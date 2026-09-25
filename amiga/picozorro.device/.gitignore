@@ -1,0 +1,4 @@
+picozorro.device
+*.o
+s2test
+build.flags
