@@ -1,0 +1,4 @@
+mpega.library
+mpegtest
+*.o
+build.flags
