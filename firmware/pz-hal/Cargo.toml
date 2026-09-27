@@ -1,0 +1,57 @@
+[package]
+name = "pz-hal"
+version = "0.1.0"
+description = "PicoZorro pieces on embassy-rp that the firmware images share: the backplane serve loop (UART), the Ethernet chip bring-up on SPI, the USB CDC device with the picotool reset interface, the USB host for Poseidon"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+test = false
+bench = false
+
+[features]
+# The chip, forwarded to embassy-rp: exactly one. rp235xb (QFN-80, 48 GPIO)
+# for the Core2350B and the PicoZorro boards (pz-app), rp235xa (QFN-60, 30
+# GPIO) for RP2350A boards. Cargo unifies features over one build
+# invocation, so an rp235xa build is its own `cargo` run.
+rp235xa = ["embassy-rp/rp235xa"]
+rp235xb = ["embassy-rp/rp235xb"]
+# Ethernet chip on SPI (`chip`): at most one. pz-app forwards its own
+# features of the same names.
+nic-w5500 = ["dep:embassy-net-wiznet"]
+nic-enc28j60 = ["dep:embassy-net-enc28j60"]
+# W5500 without /INT: the RX size is polled every 500 us.
+nic-poll = []
+# The USB host for Poseidon (`usb_host`, docs/REGISTERS-USB.md).
+usb-host = ["dep:embassy-usb-host", "dep:embassy-usb-driver"]
+# usb-host: timing profile of every window transfer (`usb_host::USB_PROF`, read over SWD).
+usb-prof = ["usb-host"]
+# usb-host: refuse Bulk-Only commands that would change the medium of the
+# sticks listed in `usb_host::guard` (tests that write to another stick).
+write-guard = ["usb-host"]
+
+[dependencies]
+pz-core = { path = "../pz-core" }
+
+# The versions and features of pz-app.
+embassy-rp = { version = "0.10.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-time = { version = "0.5.1", features = ["defmt"] }
+embassy-sync = { version = "0.8.0", features = ["defmt"] }
+embassy-futures = "0.1.2"
+embassy-usb = { version = "0.6.0", features = ["defmt"] }
+embassy-executor = { version = "0.10.0", features = ["defmt"] }
+embedded-io-async = "0.7"
+static_cell = "2.1"
+defmt = "1.1"
+embedded-hal = "1.0"
+embedded-hal-async = "1.0"
+embedded-hal-bus = { version = "0.3", features = ["async"] }
+
+# As pz-app.
+embassy-net-wiznet = { version = "0.3.0", features = ["defmt"], optional = true }
+embassy-net-enc28j60 = { version = "0.3.0", features = ["defmt"], optional = true }
+
+# embassy git main only (the workspace patches them onto the fork).
+embassy-usb-host = { version = "0.1.0", features = ["defmt"], optional = true }
+embassy-usb-driver = { version = "0.2.2", features = ["defmt"], optional = true }
