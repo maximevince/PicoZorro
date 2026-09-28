@@ -1,0 +1,112 @@
+[package]
+name = "pz-app"
+version = "0.1.0"
+description = "PicoZorro firmware binaries for the RP2350B (embassy)"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "picozorro"
+test = false
+bench = false
+
+[[bin]]
+name = "hello"
+test = false
+bench = false
+
+[[bin]]
+name = "nic-demo"
+test = false
+bench = false
+
+[[bin]]
+name = "bus-listen"
+test = false
+bench = false
+
+[features]
+# The default build is the PicoZorro One's image (One TH and One SMD share one
+# pin map): W5500, MPEG decoder, 240 MHz, XRDY and /INT from the GPIOs, USB host.
+default = ["nic-w5500", "mpeg", "oc240", "xrdy-direct", "int-nfet", "usb-host"]
+# Ethernet chip on SPI1 (pz_hal::chip). Exactly one.
+nic-w5500 = ["pz-hal/nic-w5500"]
+nic-enc28j60 = ["pz-hal/nic-enc28j60"]
+# W5500 without /INT: the RX size is polled every 500 us (~6 % of core 0
+# idle, +0.2 ms per frame); frees GPIO39.
+nic-poll = ["pz-hal/nic-poll"]
+# Bus slave XRDY path, must match the board: xrdy-direct = the GPIO pulls
+# XRDY (the PicoZorro One); without it an on-board gate pulls XRDY and the
+# PIO drives /ARM.
+xrdy-direct = []
+# /INT through an N-MOSFET (gate GPIO45, drain /INT): GPIO45 push-pull, high
+# asserts (the PicoZorro One). Without it: an open-drain buffer, low asserts.
+int-nfet = []
+# picozorro only, developer build: core 1 plays the Amiga driver instead of
+# serving the bus, for Ethernet tests from a PC without an Amiga. Not for a
+# card in an Amiga.
+bench-host = []
+# picozorro only, developer build: no bus slave; the register window is
+# served over UART0 on GPIO0/1, e.g. for FS-UAE on the real W5500. Not for a
+# card in an Amiga.
+uart-backplane = []
+# MPEG audio decoder for mpega.library (docs/REGISTERS-MPEG.md): minimp3
+# (vendor/minimp3, C) on core 0, below the network tasks (they run on the
+# interrupt executor). Needs arm-none-eabi-gcc to build.
+mpeg = []
+# USB host for Poseidon (docs/REGISTERS-USB.md, pz_hal::usb_host): the
+# RP2350's USB port serves the USB window at A16 = 1. picozorro only; not
+# with bench-host or usb-log.
+usb-host = ["pz-hal/usb-host"]
+# usb-host with the timing profile of window transfers (pz_hal::usb_host::USB_PROF, SWD).
+usb-prof = ["usb-host", "pz-hal/usb-prof"]
+# usb-host: refuse writes to the protected sticks (pz_hal::usb_host, `guard`). Off by default.
+write-guard = ["usb-host", "pz-hal/write-guard"]
+# The RP2350's USB port as a device instead: CDC ACM with the text log and the
+# picotool reset interface (`picotool load -f` without BOOTSEL), as
+# bus-listen. Not with usb-host (one USB port): a bring-up build,
+# --no-default-features --features nic-w5500,mpeg,oc240,xrdy-direct,int-nfet,usb-log.
+usb-log = []
+# clk_sys above embassy's 150 MHz, for the bus service loop's latency:
+# oc240 = 240 MHz at 1.15 V, oc300 = 300 MHz at 1.25 V. Outside the RP2350's
+# 150 MHz rating. Without either: 150 MHz (--no-default-features and the rest).
+oc240 = []
+oc300 = []
+# Core 1 cycle counts per bus cycle and loop pass in the log (DWT CYCCNT).
+bus-prof = []
+
+[dependencies]
+pz-core = { path = "../pz-core" }
+pz-hal = { path = "../pz-hal", features = ["rp235xb"] }
+
+# Version requirements as on crates.io; the workspace patches the embassy
+# crates to git main (../Cargo.toml).
+embassy-rp = { version = "0.10.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp235xb", "binary-info"] }
+embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-time = { version = "0.5.1", features = ["defmt", "defmt-timestamp-uptime"] }
+embassy-sync = { version = "0.8.0", features = ["defmt"] }
+embassy-futures = "0.1.2"
+embassy-embedded-hal = { version = "0.6.0", features = ["defmt"] }
+embassy-net = { version = "0.9.1", features = ["defmt", "icmp-ping-reply", "tcp", "tcp-listener", "udp", "dhcpv4", "medium-ethernet"] }
+
+embassy-usb = { version = "0.6.0", features = ["defmt"] }
+embassy-usb-logger = "0.6.0"
+log = "0.4"
+
+defmt = "1.1"
+defmt-rtt = "1.3"
+panic-probe = { version = "1.0", features = ["print-defmt"] }
+cortex-m = { version = "0.7.6", features = ["inline-asm"] }
+cortex-m-rt = "0.7.6"
+embedded-hal = "1.0"
+embedded-hal-async = "1.0"
+embedded-hal-bus = { version = "0.3", features = ["async"] }
+embedded-io-async = "0.7"
+static_cell = "2.1"
+# PIO assembler for the bus slave (the version embassy-rp uses).
+pio = "0.4"
+
+[build-dependencies]
+# Compiles the vendored minimp3 (vendor/minimp3) for the MPEG features.
+cc = "1.2"

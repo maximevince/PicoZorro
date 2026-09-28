@@ -1,0 +1,111 @@
+; PicoZorro Zorro II bus-slave PIO programs (src/zbus.rs).
+;
+; Two PIO blocks cooperate, because one block only sees a 32-pin window:
+;
+;   PIO1 (GPIOBASE 16, window GPIO16-47)  pz_decode / pz_decode_gate
+;       watches /AS, compares {/CFGIN, A23..A16} with Y, pulls XRDY.
+;       Configured, the CPU moves IN_BASE to A17 and IN_COUNT to 8: the
+;       board is 128 KiB and A16 is left to the data phase.
+;   PIO0 (GPIOBASE 0, window GPIO0-31)    pz_data
+;       captures the cycle (data, strobes, A1-A7, A16), hands it to the CPU,
+;       drives read data, tells PIO1 when XRDY may be released.
+;
+; Cross-block handshake (RP2350 PIO v1 "irq prev/next"; pio-parser 0.3 writes
+; the block modifier after the number, `irq set 4 prev`, like `rel`):
+;   PIO1 -> PIO0 : flag 4  "matched cycle started, XRDY is low"
+;   PIO0 -> PIO1 : flag 5  "done, release XRDY"
+;
+; GPIO numbers in `wait gpio` are relative to the block's GPIOBASE (RP2350
+; datasheet, GPIOBASE register: "relocate GPIO 0 from PIO's point of view").
+; The pico-sdk relocates them at load time; embassy-rp does not, so the
+; decode programs (base 16) use AS_REL = 0 and the data program (base 0)
+; uses AS_ABS = 16. Both mean GPIO16, /AS.
+
+; No `.pio_version 1` line: pio-parser 0.3 has no such directive (it
+; derives the version from the instructions used: irq prev/next, mov pindirs).
+
+.define PUBLIC PZ_IRQ_GO    4
+.define PUBLIC PZ_IRQ_DONE  5
+.define AS_REL              0
+.define AS_ABS              16
+
+; ---------------------------------------------------------------------------
+; Pure-PIO decode. XRDY is the single SET pin: output value preset to 0 by
+; the CPU, so `set pindirs` switches between "pull low" and "float".
+;
+;   in_base = A16, in_count = 9  -> X = {/CFGIN, A23..A16}  (unconfigured)
+;   in_base = A17, in_count = 8  -> X = {/CFGIN, A23..A17}  (configured)
+;   Y       = value to match (MATCH_NEVER disables the slave)
+;
+; Cycles from /AS seen low to XRDY driven: wait(0) mov(1) jmp(2) set(3).
+; ---------------------------------------------------------------------------
+.program pz_decode
+.wrap_target
+top:
+    wait 1 gpio AS_REL          ; previous cycle fully ended
+    wait 0 gpio AS_REL          ; new cycle
+    mov x, pins                 ; 9-bit match field
+    jmp x!=y top                ; not ours: Gary runs the cycle as usual
+    set pindirs, 1              ; XRDY low
+    irq set PZ_IRQ_GO prev
+    wait 1 irq PZ_IRQ_DONE      ; cleared on completion
+    set pindirs, 0              ; XRDY released -> Gary asserts /DTACK
+.wrap
+
+; ---------------------------------------------------------------------------
+; Gate-assisted decode. An external OR(/AS, /ARM) + open
+; drain buffer pulls XRDY. This SM only produces /ARM (side-set pin):
+; it arms while the address matches, so XRDY falls one gate delay after /AS.
+;   jmp_pin = /AS (relative: 0)
+; ---------------------------------------------------------------------------
+.program pz_decode_gate
+.side_set 1 opt
+.wrap_target
+top:
+    mov x, pins         side 1  ; disarmed
+    jmp x!=y top
+armed:
+    mov x, pins         side 0  ; armed; keep checking while /AS is high
+    jmp x!=y top
+    jmp pin armed               ; /AS still high
+    irq set PZ_IRQ_GO prev      ; /AS low on a matching address
+    wait 1 irq PZ_IRQ_DONE
+    wait 1 gpio AS_REL  side 1  ; release XRDY, then wait for end of cycle
+.wrap
+
+; ---------------------------------------------------------------------------
+; Data phase. Runs only for matched cycles, with XRDY already held low, so
+; nothing here is time critical: the bus master is waiting for us.
+;
+;   in_base  = D0, 29 bits, shift left, autopush at 29
+;              -> word = {A16, XRDY, A7..A1, READ, /LDS, /UDS, /AS, D15..D0}
+;   out_base = D0, 16 pins, shift right, autopull at 32
+;              -> CPU replies with (0xffff << 16) | data
+;   jmp_pin  = READ
+;   Y        = settle delay in cycles (CPU preloads). On writes the data
+;              strobes and data only become valid in S4, well after /AS.
+; ---------------------------------------------------------------------------
+.program pz_data
+.wrap_target
+    wait 1 irq PZ_IRQ_GO
+    jmp pin do_read             ; R/W is valid before /AS falls
+    mov x, y                    ; write: data and strobes come in S4
+settle:
+    jmp x-- settle
+    in pins, 29                 ; autopush: CPU now has the whole cycle
+    out null, 32                ; write: stall until the CPU has acted on it,
+    irq set PZ_IRQ_DONE next    ; so state changes (e.g. the $48 base latch)
+    jmp fin                     ; are in force before the next cycle can start
+do_read:
+    ; Read: address and strobes come with /AS (68000 S2), so no settle
+    ; beyond a few cycles of margin (a 250 ns settle here would cost ~13 %
+    ; of every read cycle).
+    nop [7]
+    in pins, 29                 ; autopush: CPU now has the whole cycle
+    out pins, 16                ; stalls until the CPU answers
+    out pindirs, 16 [3]         ; drive; let the bus settle before releasing
+    irq set PZ_IRQ_DONE next    ; XRDY up only once data is already valid
+fin:
+    wait 1 gpio AS_ABS          ; /AS high: get off the bus at once
+    mov pindirs, null
+.wrap
