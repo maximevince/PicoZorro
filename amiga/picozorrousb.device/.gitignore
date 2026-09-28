@@ -1,0 +1,5 @@
+picozorrousb.device
+*.o
+usbtest
+stortest
+build.flags
