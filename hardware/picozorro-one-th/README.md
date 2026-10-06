@@ -29,7 +29,7 @@ yet.** The open points are listed at the end of this file.
 | `fab/order-notes.txt` | the options to pick in the order form |
 | `fab/picozorro-one-th-parts.csv` | parts list for buying (includes the not-fitted parts, marked DNP) |
 | `3d/` | STEP models of the modules and the PTC that the board references; origins and licences in `3d/SOURCES.txt` |
-| `images/` | schematic (PDF, PNG), copper and silkscreen views, 3D render |
+| `images/` | schematic (PDF, PNG), copper and silkscreen views, 3D renders (top and isometric) |
 
 There are no assembly (pick-and-place) files: everything is soldered by hand.
 

@@ -11,6 +11,8 @@ MP3 decoder for an A2000-class Zorro II slot. Its through-hole version, the
 **PicoZorro One TH**, is built from off-the-shelf modules and a handful of
 through-hole parts, so that anyone with a soldering iron can make one.
 
+![PicoZorro One TH, rev A](hardware/picozorro-one-th/images/pcb-3d-iso.png)
+
 | What | How | Amiga side |
 |---|---|---|
 | Ethernet 10/100 | W5500 module on SPI | `picozorro.device`, a SANA-II driver (Roadshow, AmiTCP, ...) |
