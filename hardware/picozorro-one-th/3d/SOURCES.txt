@@ -1,0 +1,15 @@
+3D models of the PicoZorro One TH board (referenced as ${KIPRJMOD}/3d/*.step)
+
+PCM5102-I2S.step (M3, GY-PCM5102 board), copied unchanged
+  from    https://github.com/sstojos/zynthian-miniature, commit 872788b6b438185327aa1d910883230fe8f35ef5,
+          file PCM5102-I2S.step (by Stojos, the same project as the GY-PCM5102 footprint the board
+          outline follows)
+  licence GPL-3.0 (the repository's LICENSE, copied as LICENSE-zynthian-miniature.txt)
+  deviation: its board is 16.9 mm across (17.0 drawn) and its jack ends 1.1 mm past that edge
+          (1.5 in the footprint the outline follows): 0.5 mm short of the drawn jack
+
+core2350b.step, w5500-lite.step, microsd-breakout.step, ptc-radial.step
+  part of this project, modelled with build123d from the makers' dimensions and the measurements
+  in ../README.md. No maker model exists: Waveshare's Core2350B wiki has a schematic and demo
+  files only, WIZnet's WIZ850io page schematics only, the microSD breakout has no maker, and
+  KiCad 10's library has no model for Fuse_Bourns_MF-RHT070.

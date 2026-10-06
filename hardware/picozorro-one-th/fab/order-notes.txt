@@ -1,0 +1,6 @@
+PicoZorro One TH rev A - order options
+- 2 layers, FR-4, 1.6 mm, 155.5 x 65.92 mm (tongue included)
+- edge connector (Zorro II, 2 x 50 fingers at 2.54 mm, hardware/EDGE_CONNECTOR.md): gold fingers,
+  0.5 x 45 degree bevel on the finger edge; finish ENIG recommended (README.md, Mechanical), HASL works
+- the finger window is one open solder-mask area by design
+- vias tented

@@ -1,0 +1,6 @@
+(version 1)
+# P1-P4 are the four 2x8 headers of one module (Waveshare Core2350B): their courtyards
+# meet at the corners of the pin ring by design.
+(rule "module headers"
+	(condition "A.Reference == 'P1' || A.Reference == 'P2' || A.Reference == 'P3' || A.Reference == 'P4'")
+	(constraint courtyard_clearance (min -3mm)))
