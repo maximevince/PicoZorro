@@ -139,6 +139,76 @@ static void reply(struct IOUsbHWReq *iou, BYTE err)
     ReplyMsg(&iou->iouh_Req.io_Message);
 }
 
+#ifdef PZU_PROF
+/* make PROF=1 (device.h, struct PzuProf). */
+static ULONG prof_now(void)
+{
+    struct EClockVal ev;
+    if (!TimerBase)
+        return 0;
+    ReadEClock(&ev);
+    return ev.ev_lo;
+}
+
+/* An interrupt IN to a real device (not root_int). */
+static BOOL prof_int_in(struct PZUBase *pz, struct IOUsbHWReq *iou)
+{
+    return iou->iouh_Req.io_Command == UHCMD_INTXFER && iou->iouh_Dir == UHDIR_IN &&
+           iou->iouh_DevAddr != pz->root_addr;
+}
+
+/* The slot of (addr, ep); NULL when another endpoint holds it. `claim`: take it. */
+static struct PzuProfEp *prof_ep(struct PZUBase *pz, struct IOUsbHWReq *iou, BOOL claim)
+{
+    UBYTE ep = iou->iouh_Endpoint & 0x0f;
+    struct PzuProfEp *e = &pz->prof.ep[(iou->iouh_DevAddr * 3 + ep) & (PROF_EPS - 1)];
+    if (e->addr == iou->iouh_DevAddr && e->ep == ep)
+        return e;
+    if (!claim)
+        return NULL;
+    e->state = PS_NONE;
+    e->addr = iou->iouh_DevAddr;
+    e->ep = ep;
+    return e;
+}
+
+/* finish_xfer's reply of an interrupt IN report: T1 (pz->prof.t1) .. T2. */
+static void prof_reply(struct PZUBase *pz, struct IOUsbHWReq *iou, BYTE err)
+{
+    struct PzuProf *p = &pz->prof;
+    struct PzuProfEp *e = prof_ep(pz, iou, TRUE);
+    ULONG t2 = prof_now(), t;
+
+    p->n++;
+    p->t_recv_io += p->t1 - p->t0;
+    p->t_handle += t2 - p->t1;
+    e->t2pre = t2;
+    e->state = PS_REPLYING;
+    reply(iou, err);
+    t = prof_now();
+    Forbid();
+    if (e->state == PS_REPLYING) {
+        /* No DevBeginIO for it during ReplyMsg. */
+        e->t2 = t;
+        e->state = PS_REPLIED;
+        p->n_replymsg++;
+        p->t_replymsg += t - t2;
+    }
+    Permit();
+}
+
+/* start_chunk sent an interrupt IN: T5. */
+static void prof_sent(struct PZUBase *pz, struct IOUsbHWReq *iou)
+{
+    struct PzuProfEp *e = prof_ep(pz, iou, FALSE);
+    if (e && e->state == PS_DISP) {
+        pz->prof.t_send += prof_now() - e->t4;
+        pz->prof.n_send++;
+        e->state = PS_NONE;
+    }
+}
+#endif
+
 /* ------------------------------------------------------------- root hub */
 
 static const UBYTE root_dev_desc[18] = {
@@ -356,6 +426,27 @@ static void slot_free(struct Slot *s)
 /* A word in ENV:PZUSB after the backend's name. "stream": stream over a
  * backend that can lose records too (tests over the UDP tunnel; a lost
  * record fails the read). "nostream": never stream. */
+/* The number after "w=" in the args, else `def`. */
+static UWORD args_num(const char *a, const char *w, UWORD def)
+{
+    for (; *a; a++) {
+        if (*a == ' ') {
+            const char *p = a + 1, *q = w;
+            while (*q && *p == *q) {
+                p++;
+                q++;
+            }
+            if (!*q && *p == '=') {
+                UWORD v = 0;
+                for (p++; *p >= '0' && *p <= '9'; p++)
+                    v = v * 10 + (*p - '0');
+                return v;
+            }
+        }
+    }
+    return def;
+}
+
 static BOOL args_word(const char *a, const char *w)
 {
     for (; *a; a++) {
@@ -405,6 +496,11 @@ static BOOL ensure_backend(struct PZUBase *pz)
     pz->stream_out_ok = pz->stream_ok && (pz->be->lossless || args_word(pz->be_args, "streamout")) &&
                         !args_word(pz->be_args, "nostreamout");
     pz->poll1 = args_word(pz->be_args, "poll1");
+    /* A report costs the 68030 about 3.5 ms (hid.class, input.device,
+     * Intuition); a mouse polled every 2 ms as it asks keeps the CPU
+     * busy for good. Motion accumulates in the device, so 10 ms loses
+     * nothing but latency. "minpoll=N": another floor, 0 none. */
+    pz->minpoll = args_num(pz->be_args, "minpoll", 10);
     return TRUE;
 }
 
@@ -564,10 +660,14 @@ static BOOL start_chunk(struct PZUBase *pz, struct IOUsbHWReq *iou)
     h.length = chunk;
     /* Poseidon's interval is in ms; the module clamps it to 1..255 (0 = 1). */
     if (kind == XT_INTERRUPT && !pz->poll1)
-        h.interval = iou->iouh_Interval;
+        h.interval = iou->iouh_Interval > pz->minpoll ? iou->iouh_Interval : pz->minpoll;
 
     if (pz->be->send(pz, &h, in ? NULL : (UBYTE *)iou->iouh_Data + iou->iouh_Actual, in ? 0 : chunk) != 0)
         return FALSE;
+#ifdef PZU_PROF
+    if (kind == XT_INTERRUPT && in && iou->iouh_DevAddr != pz->root_addr)
+        prof_sent(pz, iou);
+#endif
     D(("xfer seq %ld: addr %ld ep %02lx kind %ld flags %02lx mps %ld chunk %ld off %ld of %ld, iouh_Flags %04lx",
        (ULONG)h.seq, (ULONG)h.addr, (ULONG)h.ep, (ULONG)kind, (ULONG)h.flags, (ULONG)h.mps, (ULONG)chunk,
        iou->iouh_Actual, iou->iouh_Length, (ULONG)iou->iouh_Flags));
@@ -732,6 +832,12 @@ static void finish_xfer(struct PZUBase *pz, struct Slot *s, struct PzuRep *rep)
         err = IOERR_ABORTED;
     pz->n_xfers++;
     slot_free(s);
+#ifdef PZU_PROF
+    if (prof_int_in(pz, iou)) {
+        prof_reply(pz, iou, err);
+        return;
+    }
+#endif
     reply(iou, err);
 }
 
@@ -864,6 +970,18 @@ static void dispatch(struct PZUBase *pz, struct IOUsbHWReq *iou)
 {
     UWORD cmd = iou->iouh_Req.io_Command;
     BYTE err;
+#ifdef PZU_PROF
+    ULONG t4 = prof_now();
+    if (prof_int_in(pz, iou)) {
+        struct PzuProfEp *e = prof_ep(pz, iou, FALSE);
+        if (e && e->state == PS_BEGUN) {
+            pz->prof.t_wake += t4 - e->t3;
+            pz->prof.n_wake++;
+            e->t4 = t4;
+            e->state = PS_DISP;
+        }
+    }
+#endif
 
     D(("cmd %ld addr %ld ep %ld len %ld flags %lx", (ULONG)cmd, (ULONG)iou->iouh_DevAddr, (ULONG)iou->iouh_Endpoint,
        iou->iouh_Length, (ULONG)iou->iouh_Flags));
@@ -950,6 +1068,12 @@ static void proc_main(void)
     if (tport && (pz->treq = (struct timerequest *)CreateIORequest(tport, sizeof(struct timerequest))) != NULL &&
         OpenDevice(TIMERNAME, UNIT_VBLANK, (struct IORequest *)pz->treq, 0) == 0)
         TimerBase = pz->treq->tr_node.io_Device;
+#ifdef PZU_PROF
+    if (TimerBase) {
+        struct EClockVal ev;
+        pz->prof.eclock_hz = ReadEClock(&ev);
+    }
+#endif
 
     pz->startup_error = IOERR_OPENFAIL;
     if (GetVar("PZUSB", pz->be_args, sizeof(pz->be_args), GVF_GLOBAL_ONLY) <= 0)
@@ -989,6 +1113,10 @@ static void proc_main(void)
         portsig = 1UL << pz->port->mp_SigBit;
         for (;;) {
             ULONG now;
+#ifdef PZU_PROF
+            BOOL busy = FALSE;
+            pz->prof.n_loops++;
+#endif
             if (pz->be_open) {
                 sigs = pz->be->wait(pz, portsig | SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F, 100);
             } else {
@@ -997,8 +1125,15 @@ static void proc_main(void)
             }
             if (sigs & SIGBREAKF_CTRL_C)
                 break;
+#ifdef PZU_PROF
+            while ((iou = (struct IOUsbHWReq *)GetMsg(pz->port)) != NULL) {
+                busy = TRUE;
+                dispatch(pz, iou);
+            }
+#else
             while ((iou = (struct IOUsbHWReq *)GetMsg(pz->port)) != NULL)
                 dispatch(pz, iou);
+#endif
             /* Drain the socket every time round, not only when the wait
              * ended on it: a wait that a new request interrupted reports
              * no readiness, and Poseidon sends a new request after every
@@ -1006,9 +1141,25 @@ static void proc_main(void)
              * something else woke us (keys stuck until the mouse moved). */
             if (pz->be_open) {
                 struct PzuRep rep;
+#ifdef PZU_PROF
+                /* T0 before the recv() that returns the record, T1 after it. */
+                for (;;) {
+                    pz->prof.t0 = prof_now();
+                    if (pz->be->recv(pz, &rep, pz->buf, PZU_MAX_DATA) <= 0)
+                        break;
+                    pz->prof.t1 = prof_now();
+                    busy = TRUE;
+                    on_reply(pz, &rep);
+                }
+#else
                 while (pz->be->recv(pz, &rep, pz->buf, PZU_MAX_DATA) > 0)
                     on_reply(pz, &rep);
+#endif
             }
+#ifdef PZU_PROF
+            if (!busy)
+                pz->prof.n_wakes_empty++;
+#endif
             do_aborts(pz);
 #ifdef PZU_DEBUG
             pzu_log_flush(pz);
@@ -1092,6 +1243,10 @@ struct PZUBase *DevInit(REGARG(struct PZUBase *pz, d0), REGARG(BPTR seglist, a0)
     InitSemaphore(&pz->lock);
     new_list(&pz->waiting);
     new_list(&pz->root_int);
+#ifdef PZU_PROF
+    memset(&pz->prof, 0, sizeof(pz->prof));
+    pz->prof.prof_magic = PROF_MAGIC;
+#endif
     /* Started from the card's boot ROM, this runs at romboot time,
      * before dos.library is up (priority -40 against -120): dos.library is
      * opened at the first open then. */
@@ -1217,6 +1372,24 @@ void DevBeginIO(REGARG(struct IOUsbHWReq *io, a1), REGARG(struct PZUBase *pz, a6
         return;
     }
     io->iouh_Req.io_Flags &= ~IOF_QUICK;
+#ifdef PZU_PROF
+    /* T3, in the caller's task; races with the process cost a sample at most. */
+    if (prof_int_in(pz, io)) {
+        struct PzuProfEp *e = prof_ep(pz, io, FALSE);
+        ULONG t3 = prof_now();
+        if (e) {
+            UBYTE st = e->state;
+            if (st == PS_REPLIED || st == PS_REPLYING) {
+                pz->prof.t_poseidon += t3 - (st == PS_REPLIED ? e->t2 : e->t2pre);
+                pz->prof.n_match++;
+                if (st == PS_REPLYING)
+                    pz->prof.n_preempt++;
+            }
+            e->t3 = t3;
+            e->state = PS_BEGUN;
+        }
+    }
+#endif
     PutMsg(pz->port, &io->iouh_Req.io_Message);
 }
 

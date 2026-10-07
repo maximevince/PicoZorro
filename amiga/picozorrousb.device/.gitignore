@@ -3,3 +3,4 @@ picozorrousb.device
 usbtest
 stortest
 build.flags
+pzusbprof

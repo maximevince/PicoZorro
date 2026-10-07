@@ -128,6 +128,40 @@ struct Slot {
 #define SS_IN  1
 #define SS_OUT 2
 
+#ifdef PZU_PROF
+/* make PROF=1: where the time per interrupt IN report goes (pzusbprof).
+ * E-clock ticks (ev_lo), sums modulo 2^32. Per (addr, ep), direct-mapped:
+ * T2 = our ReplyMsg, T3 = the next DevBeginIO, T4 = dispatch, T5 = sent. */
+#define PROF_MAGIC 0x50524f46        /* 'PROF' */
+#define PROF_EPS   8
+#define PS_NONE     0
+#define PS_REPLYING 1                /* in ReplyMsg; t2pre = just before it */
+#define PS_REPLIED  2                /* t2 = after ReplyMsg */
+#define PS_BEGUN    3                /* t3 valid */
+#define PS_DISP     4                /* t4 valid */
+struct PzuProfEp {
+    UBYTE addr, ep;
+    volatile UBYTE state;            /* PS_*; DevBeginIO runs in the caller's task */
+    UBYTE pad;
+    ULONG t2pre, t2, t3, t4;
+};
+struct PzuProf {
+    ULONG prof_magic;
+    ULONG eclock_hz;
+    ULONG n;                         /* interrupt IN reports replied */
+    ULONG t_recv_io;                 /* recv() of the completion record */
+    ULONG t_handle;                  /* after recv .. just before ReplyMsg */
+    ULONG n_replymsg, t_replymsg;    /* ReplyMsg itself, when not preempted in it */
+    ULONG n_match, t_poseidon;       /* our ReplyMsg .. next DevBeginIO, same (addr, ep) */
+    ULONG n_preempt;                 /* of n_match: DevBeginIO came during our ReplyMsg */
+    ULONG n_wake, t_wake;            /* DevBeginIO .. top of dispatch */
+    ULONG n_send, t_send;            /* dispatch .. after be->send in start_chunk */
+    ULONG n_loops, n_wakes_empty;    /* proc_main loop; rounds with no message and no record */
+    ULONG t0, t1;                    /* process: around the recv() of the current record */
+    struct PzuProfEp ep[PROF_EPS];
+};
+#endif
+
 struct PZUBase {
     struct Library lib;
     UWORD pad;
@@ -163,6 +197,7 @@ struct PZUBase {
     BOOL stream_ok;                /* the backend may stream (lossless, or "stream" in ENV:PZUSB) */
     BOOL stream_out_ok;            /* bulk OUT too ("nostreamout" in ENV:PZUSB: not) */
     BOOL poll1;                    /* "poll1" in ENV:PZUSB: every interrupt pipe polled every ms */
+    UWORD minpoll;                 /* floor for the interrupt poll interval, ms ("minpoll=N", 10) */
     struct MinList root_int;       /* pending UHCMD_INTXFER on root ep 1 */
     ULONG next_poll;               /* ms clock of the next PORT_STATUS */
     struct IOUsbHWReq *reset_iou;  /* SetPortFeature(PORT_RESET) waiting for the module */
@@ -173,6 +208,9 @@ struct PZUBase {
     UBYTE *buf;                    /* PZU_MAX_DATA staging */
 
     ULONG n_xfers, n_errors, n_retries;
+#ifdef PZU_PROF
+    struct PzuProf prof;           /* last: pzusbprof reads it (built with -DPZU_PROF too) */
+#endif
 };
 
 extern struct ExecBase *SysBase;

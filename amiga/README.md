@@ -37,7 +37,9 @@ SANA-II and Roadshow headers; needs `lha`) and Poseidon's headers from
 
 A local bebbo install works too: `make AMIGA_GCC=m68k-amigaos-gcc
 AMIGA_VASM=vasmm68k_mot`. `make DEBUG=1` in a driver's directory builds it
-with log lines on the serial port.
+with log lines on the serial port. `make PROF=1` in `picozorrousb.device`
+builds the driver with E-clock timestamps around every interrupt IN report;
+`pzusbprof` (built there too) prints them, `pzusbprof reset` zeroes them.
 
 ## Installing
 
@@ -58,7 +60,9 @@ from the next reset. Installed from disk instead, or to run a newer build:
 The drivers look for the card through expansion.library (manufacturer
 2011, product $5A) and take its interrupt on /INT2. With the card's
 interrupt on /INT6, set `ENV:PZNET` and `ENV:PZUSB` to `pz 6`
-(`SetEnv SAVE PZNET "pz 6"`).
+(`SetEnv SAVE PZNET "pz 6"`). `ENV:PZUSB` also takes `minpoll=N` after the
+backend (`pz minpoll=4`): the floor for the poll interval of interrupt
+endpoints in ms, default 10, 0 for none.
 
 ## Developer backends
 
