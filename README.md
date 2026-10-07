@@ -21,6 +21,24 @@ through-hole parts, so that anyone with a soldering iron can make one.
 | Boot ROM | the drivers served from the card | nothing to install: Kickstart loads them at boot |
 | Firmware updates | A/B partitions in the module's flash | `pzflash` on the Amiga |
 
+## One TH: two builds, one board
+
+The One TH PCB carries two parts lists. Every through-hole part has an SMD
+alternate on the same nets, in the same footprint area, and only one of
+the two is ever fitted. Same Gerbers, same firmware, same Amiga software.
+
+| DIY build (all through-hole) | JLC build (SMD set assembled by JLCPCB) |
+|---|---|
+| ![One TH, DIY build](hardware/picozorro-one-th/images/pcb-3d-th.png) | ![One TH, JLC build](hardware/picozorro-one-th/images/pcb-3d-jlc.png) |
+| KiCad's default variant. You solder everything: 1N5817, radial PTC, 2N3904, axial resistor, LD1117V33 in TO-220, electrolytics, a microSD breakout. | KiCad variant `JLC`. JLCPCB places SS14, 1812 PTC, MMBT3904, 0603 resistors, an AMS1117-3.3 (SOT-223) and banks of 22 uF MLCCs, plus a Hirose push-push microSD socket. You solder only the modules on their headers and the USB connector (J2 or J3). |
+| Parts list: `fab/picozorro-one-th-parts.csv` | BOM and placement: `fab/jlc/picozorro-one-th-bom-jlc.csv`, `fab/jlc/picozorro-one-th-cpl-jlc.csv` |
+
+Both builds take the same bought modules (Core2350B0, W5500 "Lite", the
+optional GY-PCM5102 DAC). The silk frames each through-hole / SMD pair
+under one label, so the board reads the same either way. Order options,
+the full part-by-part table and the LCSC numbers are in
+`hardware/picozorro-one-th/README.md` and `fab/order-notes.txt`.
+
 ## Status
 
 - Firmware and drivers run on a prototype (a Core2350B module on a carrier
@@ -51,6 +69,11 @@ through-hole parts, so that anyone with a soldering iron can make one.
 
 1. Build the card: `hardware/picozorro-one-th/README.md` (parts list,
    fabrication files, what to check before the first power-up).
+
+   Steps 2 and 3 can be skipped: each
+   [release](https://github.com/maximevince/PicoZorro/releases) carries
+   `picozorro-install.uf2`, `picozorro.pzf` and the Amiga software, built
+   by CI (`.github/workflows/build.yml`).
 2. Build the Amiga software once, it goes into the firmware's boot image:
 
        make -C amiga toolchain   # once: pulls the image, fetches NDK 3.2 and the Poseidon headers

@@ -1,0 +1,153 @@
+# Builds the Amiga software and the RP2350 firmware on every push and pull
+# request. A tag v* additionally creates a draft release with both attached.
+#   amiga     drivers, mpega.library, pzflash, tools; the boot image (boot.img)
+#   firmware  host tests; picozorro-install.uf2 and picozorro.pzf with boot.img embedded
+#   release   (tags only) draft GitHub release with the firmware and the Amiga software
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Prebuilt picotool 2.x (RP2350 support), raspberrypi/pico-sdk-tools.
+  PICOTOOL_URL: https://github.com/raspberrypi/pico-sdk-tools/releases/download/v2.3.1-0/picotool-2.3.1-x86_64-lin.tar.gz
+  PICOTOOL_SHA256: 878a1a1e7d8336b8be60300c7218f366d9790c0d3a211b181d6d172e80b1248e
+
+jobs:
+  amiga:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install lha
+        run: sudo apt-get update && sudo apt-get install -y lhasa
+
+      - name: Toolchain (bebbo GCC image, NDK 3.2, Poseidon headers)
+        run: make -C amiga toolchain
+
+      - name: Build the Amiga software
+        run: make amiga
+
+      - name: Build the boot image
+        run: make boot
+
+      - name: Stage the Amiga software
+        run: |
+          d=dist/PicoZorro-amiga
+          mkdir -p $d/Devs/Networks $d/Devs/USBHardware $d/Libs $d/C $d/Tools
+          cp amiga/picozorro.device/picozorro.device       $d/Devs/Networks/
+          cp amiga/picozorrousb.device/picozorrousb.device $d/Devs/USBHardware/
+          cp amiga/mpega.library/mpega.library             $d/Libs/
+          cp amiga/pzflash/pzflash                         $d/C/
+          for f in amiga/pztest amiga/picozorro.device/s2test \
+                   amiga/picozorrousb.device/{usbtest,stortest,pzusbprof} \
+                   amiga/mpega.library/mpegtest \
+                   amiga/pztools/{devinfo,memdump,memcheck,pzbench,pzload}; do
+            cp "$f" $d/Tools/
+          done
+          cp amiga/README.md $d/
+          cp LICENSES/GPL-3.0-or-later.txt $d/LICENSE.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: amiga
+          path: dist/PicoZorro-amiga
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: boot-img
+          path: firmware/boot.img
+          if-no-files-found: error
+
+  firmware:
+    needs: amiga
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install arm-none-eabi-gcc and libusb
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi libusb-1.0-0
+
+      - name: Install picotool
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/picotool.tar.gz" "$PICOTOOL_URL"
+          echo "$PICOTOOL_SHA256  $RUNNER_TEMP/picotool.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/picotool.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/picotool" >> "$GITHUB_PATH"
+
+      - name: Rust toolchain and cargo-binutils
+        working-directory: firmware
+        run: |
+          rustup toolchain install
+          rustup component add llvm-tools
+          cargo install cargo-binutils --locked
+
+      # On a tag v1.2.3 the image reports "1.2.3" (16 bytes at most, the
+      # .pzf header); otherwise build.rs uses "<crate version>-<git hash>".
+      - name: Version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          echo "PZ_VERSION=${v:0:16}" >> "$GITHUB_ENV"
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: boot-img
+          path: firmware
+
+      - name: Host tests
+        run: make fw-test
+
+      - name: Build every firmware binary
+        run: make fw
+
+      - name: Install UF2 and update file
+        run: |
+          make fw-uf2
+          make fw-pzf
+          mkdir -p dist
+          cp firmware/picozorro-install.uf2 firmware/picozorro.pzf dist/
+          cp firmware/target/thumbv8m.main-none-eabihf/release/picozorro dist/picozorro.elf
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: firmware
+          path: dist
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [amiga, firmware]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Package
+        run: |
+          mkdir -p out
+          cp artifacts/firmware/picozorro-install.uf2 artifacts/firmware/picozorro.pzf out/
+          cp artifacts/firmware/picozorro.elf out/
+          cp -r artifacts/amiga "PicoZorro-amiga-$GITHUB_REF_NAME"
+          zip -r "out/PicoZorro-amiga-$GITHUB_REF_NAME.zip" "PicoZorro-amiga-$GITHUB_REF_NAME"
+          (cd out && sha256sum * > SHA256SUMS)
+
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/* \
+            --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "PicoZorro $GITHUB_REF_NAME" --generate-notes
