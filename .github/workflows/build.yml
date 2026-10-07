@@ -27,9 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install lha
-        run: sudo apt-get update && sudo apt-get install -y lhasa
-
       - name: Toolchain (bebbo GCC image, NDK 3.2, Poseidon headers)
         run: make -C amiga toolchain
 

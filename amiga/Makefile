@@ -8,6 +8,9 @@
 #   Poseidon headers       github.com/rondoval/poseidon-backport, pinned
 include common/gcc.mk
 
+# lha, or 7-Zip where lha is missing (it reads .lha too, e.g. on GitHub's runners).
+LHA_X := $(if $(shell command -v lha 2>/dev/null),lha xq,7z x -y -bd)
+
 POSEIDON_REV := 754216c5f91c00fd189da2b6ef526d6c622c25b2
 POSEIDON_HDRS := devices/usb.h devices/usb_hub.h devices/usbhardware.h devices/usbhcd_common.h libraries/poseidon.h
 
@@ -26,7 +29,7 @@ toolchain:
 	docker pull $(BEBBO_IMAGE)
 	mkdir -p $(TC)/NDK3.2
 	[ -d $(TC)/NDK3.2/SANA+RoadshowTCP-IP ] || (cd $(TC) && curl -sLO http://aminet.net/dev/misc/NDK3.2.lha \
-	  && cd NDK3.2 && lha xq ../NDK3.2.lha)
+	  && cd NDK3.2 && $(LHA_X) ../NDK3.2.lha)
 	$(MAKE) poseidon-headers
 
 poseidon-headers:

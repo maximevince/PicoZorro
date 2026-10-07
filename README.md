@@ -99,7 +99,7 @@ Other targets: `make` (host tests + every firmware binary), `make amiga`,
 (ERC + DRC). Needs: rustup (stable; the toolchain file adds the target),
 arm-none-eabi-gcc (the MP3 decoder is C), picotool, probe-rs with RP2350
 support for SWD, cargo-binutils for the update and install files; for `make amiga`:
-docker, lha, curl. Details in `firmware/README.md` and `amiga/README.md`.
+docker, lha (or 7z), curl. Details in `firmware/README.md` and `amiga/README.md`.
 
 ## Safety
 

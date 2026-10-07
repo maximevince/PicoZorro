@@ -29,7 +29,7 @@ pinned by digest (`common/gcc.mk`). Once:
 
 pulls the image and fetches into `.toolchain/` what it does not carry: the
 NDK 3.2 R4 from Aminet (`http://aminet.net/dev/misc/NDK3.2.lha`, for the
-SANA-II and Roadshow headers; needs `lha`) and Poseidon's headers from
+SANA-II and Roadshow headers; needs `lha` or `7z`) and Poseidon's headers from
 `github.com/rondoval/poseidon-backport` at a pinned commit. Then:
 
     make            # everything
