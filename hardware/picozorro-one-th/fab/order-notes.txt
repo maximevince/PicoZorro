@@ -4,3 +4,31 @@ PicoZorro One TH rev A - order options
   0.5 x 45 degree bevel on the finger edge; finish ENIG recommended (README.md, Mechanical), HASL works
 - the finger window is one open solder-mask area by design
 - vias tented
+
+One board, two builds. Fit one of them, never both parts of a pair (they share the footprint area).
+
+DIY build (no assembly order; parts list picozorro-one-th-parts.csv, the rows without DNP)
+  The builder solders everything, all through-hole:
+  - D1 1N5817, F1 PTC 0.9 A, C1 100 uF, C2 220 uF, Q1 2N3904, R1 2.2 k
+  - U2 LD1117V33 (TO-220, lying, 3V3_AUX regulator), C3 10 uF 25 V electrolytic (U2 input, mind the +),
+    C4 10 uF (U2 output)
+  - J2 USB-A (or J3, the 2x5 header)
+  - U1 Core2350B on P1-P4, M1 W5500 Lite on M1J1 / M1J2; optional M2 microSD breakout, M3 GY-PCM5102 on
+    M3J1 / M3J2
+  - JP2 stays open (as delivered): U2 supplies 3V3_AUX. Bridge JP2 only on a board without U2 (and never
+    with U2 fitted): the module's 3V3 then feeds M1 / M2
+  - optional: J4 SWD, J5 RUN/BOOT; JP1 recut for /INT6
+  - not fitted: the SMD footprints (D101, R101, F101, C301, Q101, U201, R6, C401, C101-C103, C201-C205, J6,
+    R2-R5, C5, C6)
+
+JLC build (PCBA order: jlc/picozorro-one-th-bom-jlc.csv + jlc/picozorro-one-th-cpl-jlc.csv, top side)
+  JLC places the SMD set (KiCad variant JLC). Check the part rotations in JLC's DFM preview: the CPL carries
+  the corrections of kicad-jlcpcb-tools for SOT-223 (+180) and SOT-23 (-90), none for the others.
+  The builder then solders by hand, all through-hole:
+  - the modules on their headers: U1 Core2350B (P1-P4), M1 W5500 Lite (M1J1 / M1J2), optional M3 GY-PCM5102
+    (M3J1 / M3J2)
+  - J2 USB-A (or J3, the 2x5 header)
+  - nothing else: JP2 stays open (U201 AMS1117-3.3 with C301 / R6 / C401, fitted by JLC, supplies 3V3_AUX); no M2 (J6 is the microSD socket); the through-hole
+    alternates (D1, R1, F1, C1, C2, C3, C4, Q1, U2, M2) stay empty; optional J4 / J5 as in the DIY build
+  - Economic PCBA does not offer gold fingers: ENIG without bevel there, or
+    Standard PCBA for hard-gold bevelled fingers

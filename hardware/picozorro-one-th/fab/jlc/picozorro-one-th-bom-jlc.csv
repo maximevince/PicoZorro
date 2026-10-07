@@ -1,0 +1,22 @@
+Comment,Designator,Footprint,LCSC,Qty,MPN,Builder reference,DNP
+100n,C5,C_0603_1608Metric,C14663,1,CC0603KRX7R9BB104,C5 (JLC build only),
+10u,"C6,C301",C_0805_2012Metric,C15850,2,CL21A106KAYNNNE,C6 (JLC build only); C3 (SMD),
+22u,"C101,C102,C103,C201,C202,C203,C204,C205,C401",C_1206_3216Metric,C12891,9,CL31A226KAHNNNE,C1 (SMD); C1 (SMD); C1 (SMD); C2 (SMD); C2 (SMD); C2 (SMD); C2 (SMD); C2 (SMD); C401 (JLC build only),
+SS14,D101,D_SMA,C2480,1,SS14,D1 (SMD),
+PTC 1.1A hold,F101,Fuse_1812_4532Metric,C142747,1,1812L110/33MR,F1 (SMD),
+DM3AT-SF-PEJM5,J6,microSD_HC_Hirose_DM3AT-SF-PEJM5,C114218,1,DM3AT-SF-PEJM5,M2 (SMD),
+MMBT3904,Q101,SOT-23,C20526,1,MMBT3904,Q1 (SMD),
+10k,"R2,R3,R4,R5",R_0603_1608Metric,C25804,4,0603WAF1002T5E,R2 (JLC build only); R3 (JLC build only); R4 (JLC build only); R5 (JLC build only),
+1R0,R6,R_0603_1608Metric,C22936,1,0603WAF100KT5E,R6 (JLC build only),
+2.2k,R101,R_0603_1608Metric,C4190,1,0603WAF2201T5E,R1 (SMD),
+AMS1117-3.3,U201,SOT-223-3_TabPin2,C6186,1,AMS1117-3.3,U2 (SMD),
+1N5817,D1,D_DO-41_SOD81_P10.16mm_Horizontal,,1,1N5817,"D1 (through-hole, DIY build)",DNP
+2.2k,R1,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,,1,,"R1 (through-hole, DIY build)",DNP
+PTC 0.9A hold,F1,Fuse_Bourns_MF-RHT070,,1,RUEF090,"F1 (through-hole, DIY build)",DNP
+2N3904,Q1,TO-92_Inline,,1,2N3904,"Q1 (through-hole, DIY build)",DNP
+LD1117V33,U2,TO-220-3_Horizontal_TabDown,,1,LD1117V33,"U2 (through-hole, DIY build)",DNP
+10u,C4,C_Disc_D5.1mm_W3.2mm_P5.00mm,,1,,"C4 (through-hole, DIY build)",DNP
+10u,C3,CP_Radial_D5.0mm_P2.00mm,,1,,"C3 (through-hole, DIY build)",DNP
+100u,C1,CP_Radial_D6.3mm_P2.50mm,,1,,"C1 (through-hole, DIY build)",DNP
+220u,C2,CP_Radial_D8.0mm_P3.50mm,,1,,"C2 (through-hole, DIY build)",DNP
+microSD breakout,M2,PinHeader_1x06_P2.54mm_Vertical,,1,,"M2 (through-hole, DIY build)",DNP

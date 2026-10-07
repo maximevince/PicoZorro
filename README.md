@@ -130,8 +130,9 @@ Copyleft on purpose: forks stay open.
   licence: `firmware/vendor/`.
 - Hardware (`hardware/`): **CERN-OHL-S-2.0**, strongly reciprocal
   (`LICENSES/CERN-OHL-S-2.0.txt`).
-  One 3D model, `hardware/picozorro-one-th/3d/PCM5102-I2S.step`, comes from
-  the zynthian-miniature project under GPL-3.0 (`3d/SOURCES.txt`).
+  Three of the 3D models in `hardware/picozorro-one-th/3d/` embed parts of
+  the KiCad library and are CC BY-SA 4.0 with KiCad's exception
+  (`3d/SOURCES.txt`).
 - Documentation: **CC BY-SA 4.0** (`LICENSES/CC-BY-SA-4.0.txt`).
 
 Copyright Maxime Vincent.

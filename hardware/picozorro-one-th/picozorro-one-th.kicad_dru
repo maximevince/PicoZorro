@@ -4,3 +4,103 @@
 (rule "module headers"
 	(condition "A.Reference == 'P1' || A.Reference == 'P2' || A.Reference == 'P3' || A.Reference == 'P4'")
 	(constraint courtyard_clearance (min -3mm)))
+# a through-hole part and its SMD alternates are never fitted together and share
+# the footprint area.
+(rule "alternate D1 D101"
+	(condition "(A.Reference == 'D1' && B.Reference == 'D101') || (A.Reference == 'D101' && B.Reference == 'D1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate R1 R101"
+	(condition "(A.Reference == 'R1' && B.Reference == 'R101') || (A.Reference == 'R101' && B.Reference == 'R1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate F1 F101"
+	(condition "(A.Reference == 'F1' && B.Reference == 'F101') || (A.Reference == 'F101' && B.Reference == 'F1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate Q1 Q101"
+	(condition "(A.Reference == 'Q1' && B.Reference == 'Q101') || (A.Reference == 'Q101' && B.Reference == 'Q1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate U2 U201"
+	(condition "(A.Reference == 'U2' && B.Reference == 'U201') || (A.Reference == 'U201' && B.Reference == 'U2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate U2 R6"
+	(condition "(A.Reference == 'U2' && B.Reference == 'R6') || (A.Reference == 'R6' && B.Reference == 'U2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate U2 C401"
+	(condition "(A.Reference == 'U2' && B.Reference == 'C401') || (A.Reference == 'C401' && B.Reference == 'U2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate U2 C301"
+	(condition "(A.Reference == 'U2' && B.Reference == 'C301') || (A.Reference == 'C301' && B.Reference == 'U2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C4 U201"
+	(condition "(A.Reference == 'C4' && B.Reference == 'U201') || (A.Reference == 'U201' && B.Reference == 'C4')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C4 R6"
+	(condition "(A.Reference == 'C4' && B.Reference == 'R6') || (A.Reference == 'R6' && B.Reference == 'C4')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C4 C401"
+	(condition "(A.Reference == 'C4' && B.Reference == 'C401') || (A.Reference == 'C401' && B.Reference == 'C4')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C4 C301"
+	(condition "(A.Reference == 'C4' && B.Reference == 'C301') || (A.Reference == 'C301' && B.Reference == 'C4')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C3 U201"
+	(condition "(A.Reference == 'C3' && B.Reference == 'U201') || (A.Reference == 'U201' && B.Reference == 'C3')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C3 R6"
+	(condition "(A.Reference == 'C3' && B.Reference == 'R6') || (A.Reference == 'R6' && B.Reference == 'C3')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C3 C401"
+	(condition "(A.Reference == 'C3' && B.Reference == 'C401') || (A.Reference == 'C401' && B.Reference == 'C3')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C3 C301"
+	(condition "(A.Reference == 'C3' && B.Reference == 'C301') || (A.Reference == 'C301' && B.Reference == 'C3')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C1 C101"
+	(condition "(A.Reference == 'C1' && B.Reference == 'C101') || (A.Reference == 'C101' && B.Reference == 'C1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C1 C102"
+	(condition "(A.Reference == 'C1' && B.Reference == 'C102') || (A.Reference == 'C102' && B.Reference == 'C1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C1 C103"
+	(condition "(A.Reference == 'C1' && B.Reference == 'C103') || (A.Reference == 'C103' && B.Reference == 'C1')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C2 C201"
+	(condition "(A.Reference == 'C2' && B.Reference == 'C201') || (A.Reference == 'C201' && B.Reference == 'C2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C2 C202"
+	(condition "(A.Reference == 'C2' && B.Reference == 'C202') || (A.Reference == 'C202' && B.Reference == 'C2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C2 C203"
+	(condition "(A.Reference == 'C2' && B.Reference == 'C203') || (A.Reference == 'C203' && B.Reference == 'C2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C2 C204"
+	(condition "(A.Reference == 'C2' && B.Reference == 'C204') || (A.Reference == 'C204' && B.Reference == 'C2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate C2 C205"
+	(condition "(A.Reference == 'C2' && B.Reference == 'C205') || (A.Reference == 'C205' && B.Reference == 'C2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 J6"
+	(condition "(A.Reference == 'M2' && B.Reference == 'J6') || (A.Reference == 'J6' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 R2"
+	(condition "(A.Reference == 'M2' && B.Reference == 'R2') || (A.Reference == 'R2' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 R3"
+	(condition "(A.Reference == 'M2' && B.Reference == 'R3') || (A.Reference == 'R3' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 R4"
+	(condition "(A.Reference == 'M2' && B.Reference == 'R4') || (A.Reference == 'R4' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 R5"
+	(condition "(A.Reference == 'M2' && B.Reference == 'R5') || (A.Reference == 'R5' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 C5"
+	(condition "(A.Reference == 'M2' && B.Reference == 'C5') || (A.Reference == 'C5' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+(rule "alternate M2 C6"
+	(condition "(A.Reference == 'M2' && B.Reference == 'C6') || (A.Reference == 'C6' && B.Reference == 'M2')")
+	(constraint courtyard_clearance (min -30mm)))
+# silk of the through-hole outlines over the SMD pads inside them is clipped by the fab.
+(rule "alternates: silk over SMD pads"
+	(constraint silk_clearance)
+	(severity ignore)
+	(condition "A.memberOfFootprint('D101') || A.memberOfFootprint('R101') || A.memberOfFootprint('F101') || A.memberOfFootprint('Q101') || A.memberOfFootprint('U201') || A.memberOfFootprint('R6') || A.memberOfFootprint('C401') || A.memberOfFootprint('C301') || A.memberOfFootprint('C101') || A.memberOfFootprint('C102') || A.memberOfFootprint('C103') || A.memberOfFootprint('C201') || A.memberOfFootprint('C202') || A.memberOfFootprint('C203') || A.memberOfFootprint('C204') || A.memberOfFootprint('C205') || A.memberOfFootprint('J6') || A.memberOfFootprint('R2') || A.memberOfFootprint('R3') || A.memberOfFootprint('R4') || A.memberOfFootprint('R5') || A.memberOfFootprint('C5') || A.memberOfFootprint('C6') || B.memberOfFootprint('D101') || B.memberOfFootprint('R101') || B.memberOfFootprint('F101') || B.memberOfFootprint('Q101') || B.memberOfFootprint('U201') || B.memberOfFootprint('R6') || B.memberOfFootprint('C401') || B.memberOfFootprint('C301') || B.memberOfFootprint('C101') || B.memberOfFootprint('C102') || B.memberOfFootprint('C103') || B.memberOfFootprint('C201') || B.memberOfFootprint('C202') || B.memberOfFootprint('C203') || B.memberOfFootprint('C204') || B.memberOfFootprint('C205') || B.memberOfFootprint('J6') || B.memberOfFootprint('R2') || B.memberOfFootprint('R3') || B.memberOfFootprint('R4') || B.memberOfFootprint('R5') || B.memberOfFootprint('C5') || B.memberOfFootprint('C6')"))

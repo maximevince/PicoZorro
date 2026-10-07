@@ -2,61 +2,93 @@
 
 The PicoZorro One is the Zorro II network and USB card of the PicoZorro
 project. The One TH is its through-hole version: bought modules and a
-handful of through-hole parts on a bare two-layer PCB, soldered by hand.
+handful of through-hole parts on a bare two-layer PCB. Every through-hole
+part also has an SMD alternate on the same board, so the same PCB can be
+assembled by JLCPCB instead (see "Two builds" below).
 
-- RP2350B: a Waveshare Core2350B module (B0 variant, no PSRAM) on four
+- RP2350B: a Waveshare Core2350B0 module (B0 variant, no PSRAM) on four
   2x8 pin strips. Its PIO state machines speak the Zorro II bus directly.
 - Ethernet: a W5500 "Lite" module (USR-ES1, WIZnet WIZ850io pinout) on SPI1.
 - USB host: the RP2350's own USB port, to a type A receptacle or a PC-style
   2x5 internal header.
-- Optional: a microSD breakout on SPI1 and a GY-PCM5102 I2S DAC breakout.
+- Optional: microSD on SPI1 (a breakout, or a soldered socket on the JLC
+  build) and a GY-PCM5102 I2S DAC breakout.
 
-![3D render of the component side](images/pcb-3d.png)
+![3D render of the component side, DIY build](images/pcb-3d-th.png)
 
 ## Status
 
 Rev A. The schematic and the routed board pass KiCad ERC and DRC with zero
-violations (`make check-one-th` at the top of the repository).
-**The board has not been built or tested in an Amiga. Do not order boards
-yet.** The open points are listed at the end of this file.
+violations, DRC with schematic parity (`make check-one-th` at the top of the
+repository). **The board has not been built or tested in an Amiga. Do not
+order boards yet.** The open points are listed at the end of this file.
+
+## Two builds: DIY through-hole and JLC-assembled
+
+One PCB, two builds. The **DIY build** (KiCad's default variant) fits every
+part through-hole, soldered by hand. The **JLC build** (KiCad variant `JLC`)
+has JLCPCB place an SMD set, almost all JLC Basic parts; the builder then
+solders only the modules on their headers and J2 (or J3).
+
+Each through-hole part and its SMD alternate sit on the same nets and share
+the footprint area; the two are never both fitted. The SMD alternate of a
+part has the part's number times 100 plus 1, 2, ... as its reference (D101 is
+D1's, C101-C103 are C1's bank), because KiCad cannot give one symbol two
+footprints. The board hides those references; silk frames group each pair
+under one label, and the JLC files name them "D1 (SMD)".
+
+![3D render of the component side, JLC build](images/pcb-3d-jlc.png)
 
 ## Files
 
 | Path | What |
 |---|---|
-| `picozorro-one-th.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, `.kicad_dru` | KiCad 10 project; the edge-connector symbol and footprint come from `../lib` |
-| `fab/gerbers/`, `fab/picozorro-one-th-gerbers.zip` | Gerber and Excellon drill files for a two-layer order |
-| `fab/order-notes.txt` | the options to pick in the order form |
-| `fab/picozorro-one-th-parts.csv` | parts list for buying (includes the not-fitted parts, marked DNP) |
+| `picozorro-one-th.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, `.kicad_dru` | KiCad 10 project with the variant `JLC`; the edge-connector symbol and footprint come from `../lib` |
+| `fab/gerbers/`, `fab/picozorro-one-th-gerbers.zip` | Gerber and Excellon drill files, the same for both builds |
+| `fab/picozorro-one-th-parts.csv` | parts list of the DIY build (the SMD alternates show DNP) |
+| `fab/jlc/picozorro-one-th-bom-jlc.csv`, `fab/jlc/picozorro-one-th-cpl-jlc.csv` | JLC BOM (the SMD set with LCSC numbers; the through-hole alternates as DNP) and placement file (SMD set only, rotations corrected for JLC) |
+| `fab/order-notes.txt` | the options to pick in the order form, and what the builder solders in each build |
 | `3d/` | STEP models of the modules and the PTC that the board references; origins and licences in `3d/SOURCES.txt` |
-| `images/` | schematic (PDF, PNG), copper and silkscreen views, 3D renders (top and isometric) |
-
-There are no assembly (pick-and-place) files: everything is soldered by hand.
+| `images/` | schematic (PDF, PNG), copper and silkscreen views, 3D renders: `pcb-3d-th.png` (DIY build), `pcb-3d-jlc.png` (JLC build, same view), `pcb-3d-iso.png` (DIY build, isometric) |
 
 ![Schematic](images/picozorro-one-th-1.png)
 
 ## What the builder solders
 
-| Ref | Part | Value / type | Package | Fitted |
-|---|---|---|---|---|
-| U1 (P1-P4) | Waveshare Core2350B module, B0 (no PSRAM) | - | four 2x8 2.54 mm pin strips | yes |
-| M1 | W5500 "Lite" module (USR-ES1, WIZ850io pinout) | - | two 1x6 2.54 mm rows | yes |
-| M2 | microSD breakout, 3.3 V, no level shifter | - | one 1x6 2.54 mm row | optional |
-| M3 | PCM5102A DAC breakout "GY-PCM5102" | - | 1x6 row (signals) + 1x9 row (holding only) | optional |
-| D1 | Schottky diode | 1N5817 | DO-41, 10.16 mm | yes |
-| F1 | resettable PTC fuse, 30 V (or 16 V) family | 0.9 A hold, e.g. Littelfuse RUEF090 | radial, 5.08 mm leads | yes |
-| C1 | electrolytic capacitor, bus +5 V | 100 uF | radial, D6.3 mm, 2.5 mm pitch | yes |
-| C2 | electrolytic capacitor, USB port | 220 uF | radial, D8 mm, 3.5 mm pitch | yes |
-| Q1 | NPN transistor | 2N3904 | TO-92, E-B-C | yes |
-| R1 | resistor, GPIO45 to Q1 base | 2.2 k | axial, DIN0207, 10.16 mm | yes |
-| J2 | USB 2.0 type A receptacle, right angle | Molex 67643 pattern | through-hole | one of J2 / J3 |
-| J3 | PC internal USB header | 2x5, pin 9 absent | 2.54 mm header | one of J2 / J3 |
-| U2 | 3.3 V regulator (fallback) | LD1117V33 | TO-220, lying down | no |
-| C3, C4 | U2 input / output capacitors | 100 nF / 10 uF | disc, 5 mm pitch | no |
-| J4 | SWD header: SWCLK / GND / SWDIO | - | 1x3 2.54 mm | no (developers) |
-| J5 | recovery header: RUN / GND / BOOTSEL | - | 1x3 2.54 mm | no (recovery) |
+DIY build, everything by hand. The last column names the SMD alternate the
+JLC build fits instead (LCSC part number in brackets; JLC Basic parts unless
+marked Extended).
 
-The fab parts list with footprints is `fab/picozorro-one-th-parts.csv`.
+| Ref | Part | Value / type | Package | Fitted (DIY) | JLC build alternate |
+|---|---|---|---|---|---|
+| U1 (P1-P4) | Waveshare Core2350B0 module (no PSRAM) | - | four 2x8 2.54 mm pin strips | yes | same, by hand |
+| M1 | W5500 "Lite" module (USR-ES1, WIZ850io pinout) | - | two 1x6 2.54 mm rows | yes | same, by hand |
+| M2 | microSD breakout, 3.3 V, no level shifter | - | one 1x6 2.54 mm row | optional | J6, Hirose DM3AT-SF-PEJM5 push-push socket (C114218, Extended), with R2-R5 and C5, C6 |
+| M3 | PCM5102A DAC breakout "GY-PCM5102" | - | 1x6 row (signals) + 1x9 row (holding only) | optional | same, by hand (optional) |
+| D1 | Schottky diode | 1N5817 | DO-41, 10.16 mm | yes | D101, SS14, SMA (C2480) |
+| F1 | resettable PTC fuse, 30 V (or 16 V) family | 0.9 A hold, e.g. Littelfuse RUEF090 | radial, 5.08 mm leads | yes | F101, 1.1 A hold, 1812, Littelfuse 1812L110/33MR (C142747, Extended) |
+| C1 | electrolytic capacitor, bus +5 V | 100 uF | radial, D6.3 mm, 2.5 mm pitch | yes | C101-C103, 3 x 22 uF 25 V X5R 1206 (C12891) |
+| C2 | electrolytic capacitor, USB port | 220 uF | radial, D8 mm, 3.5 mm pitch | yes | C201-C205, 5 x 22 uF 25 V X5R 1206 (C12891) |
+| U2 | 3.3 V regulator for 3V3_AUX | LD1117V33 | TO-220, lying down | yes | U201, AMS1117-3.3, SOT-223, tab = VOUT (C6186) |
+| C3 | U2 input capacitor | 10 uF 25 V electrolytic | radial, D5 mm, 2 mm pitch | yes | C301, 10 uF 25 V X5R 0805 (C15850) |
+| C4 | U2 output capacitor | 10 uF | disc, 5 mm pitch | yes | R6 1.0 ohm 0603 (C22936) in series with C401 22 uF 1206 (C12891) |
+| Q1 | NPN transistor | 2N3904 | TO-92, E-B-C | yes | Q101, MMBT3904, SOT-23, 1 B / 2 E / 3 C (C20526) |
+| R1 | resistor, GPIO45 to Q1 base | 2.2 k | axial, DIN0207, 10.16 mm | yes | R101, 2.2 k 0603 (C4190) |
+| J2 | USB 2.0 type A receptacle, right angle | Molex 67643 pattern | through-hole | one of J2 / J3 | same, by hand |
+| J3 | PC internal USB header | 2x5, pin 9 absent | 2.54 mm header | one of J2 / J3 | same, by hand |
+| J4 | SWD header: SWCLK / GND / SWDIO | - | 1x3 2.54 mm | no (developers) | same |
+| J5 | recovery header: RUN / GND / BOOTSEL | - | 1x3 2.54 mm | no (recovery) | same |
+
+The JLC build adds, with J6 only: R2-R5, 10 k 0603 pull-ups on DAT2, CMD
+(MOSI), DAT0 (MISO) and DAT1 (C25804); C5 100 nF 0603 (C14663) and C6
+10 uF 0805 (C15850) at J6's VDD.
+
+U1 must be the B0 variant in both builds: on the B1 / B2 modules GPIO47 is
+the PSRAM chip select, and this board needs GPIO47 for the I2S word clock.
+The microSD chip select (GPIO18) works on any variant.
+
+The parts lists are `fab/picozorro-one-th-parts.csv` (DIY) and
+`fab/jlc/picozorro-one-th-bom-jlc.csv` (JLC).
 
 F1 alternatives: Littelfuse RUEF090 or 30R090U, Bourns MF-R090-0-9,
 Littelfuse RUSBF090 (0.07-0.12 ohm new, 0.22 ohm at most after a trip;
@@ -81,15 +113,14 @@ U2 alternatives (pin order GND / VOUT / VIN seen from the front, tab =
 VOUT): LD1117V33, LM1117T-3.3, AZ1117T-3.3, LM1086CT-3.3, LT1086CT-3.3.
 They do not fit with VIN and VOUT swapped, middle pin GND, tab GND: LF33CV,
 LM3940IT-3.3, MCP1825S, MCP1826S. The silkscreen names the three holes.
+C3 is an electrolytic: mind its polarity.
 
 ## Solder jumpers
 
-Both are bridged by a trace as delivered.
-
-| Jumper | Default | Change |
+| Jumper | As delivered | Change |
 |---|---|---|
-| JP1 | 1-2: Q1 collector to /INT2 (J1 pin 19) | cut 1-2 and bridge 2-3 for /INT6 (J1 pin 22) |
-| JP2 | module 3V3 (U1 P2.16) feeds 3V3_AUX (M1, M2) | cut it when U2 is fitted; never fit U2 with JP2 bridged |
+| JP1 | bridged 1-2 by a trace: Q1 collector to /INT2 (J1 pin 19) | cut 1-2 and bridge 2-3 for /INT6 (J1 pin 22) |
+| JP2 | **open** in both builds: U2 (DIY) or U201 (JLC) supplies 3V3_AUX | fallback for a board without U2: bridge it, and the module's 3V3 (U1 P2.16) feeds 3V3_AUX. Never bridge it with U2 or U201 fitted |
 
 ## Pin map
 
@@ -110,7 +141,7 @@ The whole map:
 | 0-15 | D0-D15 | J1 |
 | 16 | /AS | J1 74 |
 | 17 | /UDS | J1 72 |
-| 18 | SD_CS | M2 pin 2 |
+| 18 | SD_CS | M2 pin 2 / J6 DAT3 |
 | 19 | READ | J1 68 |
 | 20-26 | A1-A7 | J1 |
 | 27 | XRDY | J1 18, direct |
@@ -119,12 +150,12 @@ The whole map:
 | 37 | /CFGOUT | J1 11 |
 | 38 | /BUSRST | J1 94 |
 | 39 | NIC_INT | M1 INTn (the module's LED1 is on the same pin, lit while INTn is high) |
-| 40 | SPI1 MISO | M1, M2 |
+| 40 | SPI1 MISO | M1, M2 / J6 DAT0 |
 | 41 | NIC_CS | M1 SCSn |
-| 42 | SPI1 SCK | M1, M2 |
-| 43 | SPI1 MOSI | M1, M2 |
+| 42 | SPI1 SCK | M1, M2 / J6 CLK |
+| 43 | SPI1 MOSI | M1, M2 / J6 CMD |
 | 44 | I2S_DIN | M3 |
-| 45 | INT_DRV | R1, Q1 base |
+| 45 | INT_DRV | R1 / R101, Q1 / Q101 base |
 | 46 | I2S_BCK | M3 |
 | 47 | I2S_LCK | M3 |
 
@@ -177,10 +208,15 @@ J1 +5V --+-- C1 --GND
          +-- F1 ---+--- VBUS_PORT --- J2.1, J3.1, J3.2
          |         +--- C2 --GND
          |
-         +-- U2 (not fitted) --- 3V3_AUX
+         +-- C3 --- U2 --- C4 --- 3V3_AUX --- M1, M2 / J6
 
-U1 P2.16 (3V3, module LDO output) --- JP2 --- 3V3_AUX --- M1, M2
+U1 P2.16 (3V3, module LDO output) --- JP2 (open; bridged only without U2) --- 3V3_AUX
 ```
+
+JLC build: D101, F101 and U201 (C301 at its input, R6 + C401 at its output)
+in place of D1, F1 and U2 (C3, C4); the bulk is two MLCC banks, C101-C103 on
+the bus +5 V for C1 and C201-C205 on VBUS_PORT for C2 (40.9 and 68.2 uF
+effective at 5 V). JP2 stays open in both builds.
 
 - **D1** (Schottky) keeps bench power off the Amiga's +5 V rail: the
   module's FPC USB adapter feeds the same VBUS net.
@@ -197,25 +233,71 @@ U1 P2.16 (3V3, module LDO output) --- JP2 --- 3V3_AUX --- M1, M2
 
 Port voltage from a 5.0 V rail at 500 mA: 5.0 - 0.06 (F1 new, 0.11 after a
 trip) = 4.94 V (4.89 V). USB 2.0 Table 7-7 asks for 4.75 V at a high-power
-port, so the rail may sag to 4.86 V. USB 2.0 section 7.2.4.1 asks for at
-least 120 uF on a downstream port: C2. Section 7.2.1.2.1 asks for
+port, so the rail may sag to 4.86 V. Section 7.2.1.2.1 asks for
 resettable over-current protection below 5.0 A: F1 trips at 1.8 A (Intel's
 guide sizes a single-port fuse at 1.5 A trip or more). The fault is not
 reported to the host stack: there is no pin for it.
 
-3.3 V: the module's ME6217C33M5G LDO (SOT-23-5, 800 mA absolute maximum,
-limited by package dissipation) supplies the module, M1 (132 mA typical)
-and M2 (100 mA average maximum, 300 mA peaks of 10 us). M3 is not on this
-rail: its VIN comes from VIN and it has its own two regulators. Measured
-with a thermal camera, module plus W5500 on the module's 3V3, room 20 C:
-nothing on the module above 40 C (no SD card in that measurement).
+### Bulk: C1 and C2
 
-Fallback, not fitted: U2 takes the bus +5 V directly (an LD1117V33 needs
-4.45 V at 500 mA and is specified from 4.75 V, which VIN does not
-guarantee). Fitting U2 means cutting JP2: 3V3_AUX (M1, M2) then comes from
-U2 and the module LDO feeds only the module. With U2 fitted and only bench
-power, M1 and M2 are unpowered. C3 100 nF at the input, C4 10 uF at the
-output (ST's figures; ST gives no ESR window).
+USB 2.0 section 7.2.4.1 asks for no less than 120 uF of low-ESR capacitance
+on the downstream VBUS "per hub", to keep the power of the other ports
+within 330 mV when a device is plugged in (load model 10 uF with 44 ohm).
+This card has one port: the only other load on that VBUS is the card's own
++5 V entry (D1 to VIN, U2) and, behind it, the Amiga rail. So both stay: C1
+at the entry, C2 at the port, F1 between them (on a microsecond scale the
+PTC is a plain resistor that isolates the two).
+
+A hot-plug simulation (1 m cable, assumed rail and ESR values, not a
+measurement) puts the entry droop at 0.23 / 0.15 V (PTC 0.1 / 0.3 ohm) with
+the JLC build's ceramic banks, the smallest of the arrangements tried at
+0.3 ohm, matched only by a low-ESR polymer 220 uF at the entry (0.22 /
+0.17 V). The DIY build's two electrolytics give 0.43 / 0.29 V; a single
+ordinary electrolytic at the entry (0.15 ohm ESR) 0.61 / 0.45 V, worse than
+either split. The port itself dips 0.4 to 3 V for microseconds whatever is
+fitted: no arrangement holds it within 330 mV with a stick plugged straight
+in. Both builds lay the two groups out alike: the electrolytic on top, its
+MLCC row under it in the 15 mm band.
+
+### 3.3 V
+
+3V3_AUX (M1, M2 / J6) has its own regulator, **U2, fitted in both builds**;
+JP2 stays open and the module's LDO feeds only the module. The loads: M1
+132 mA typical (W5500 data sheet section 5.4; the WIZ850io module 141 mA),
+M2 up to 100 mA, the maximum averaged over 1 s in SPI mode (SD Physical
+Layer Simplified Specification v3.01, Table 3-4 note 7; SanDisk's manual
+gives 65 mA read and 75 mA write at most). The simplified specification
+gives no peak or inrush figure. That is about 0.22 A typical, 0.24-0.27 A
+at those ceilings. M3 is not on this rail: its VIN comes from VIN and it has
+its own two regulators.
+
+U2 takes the bus +5 V directly, not behind D1. DIY build: LD1117V33. ST
+guarantees 3.235-3.365 V out for Vin 4.75-10 V at 0-800 mA (TJ 0-125 C,
+LD1117 data sheet DocID2572 Rev 38, Table 6), dropout 1.15 V at most at
+500 mA: it regulates from 4.45 V, a 0.30 V margin at the bus's 4.75 V
+minimum. The JLC build fits U201, an AMS1117-3.3 (SOT-223, the same pin
+order, tab = VOUT) under U2's footprint, its tab on the same 3V3_AUX copper
+area. Its only guaranteed dropout is 1.3 V at 800 mA, so it needs 4.60 V: a
+margin of about 0.15 V. R6 (1.0 ohm) in series with C401 (22 uF) at its
+output gives the ceramic the ESR of the tantalum the AMS1117 data sheet is
+written for. Dissipation in either build: (5.25 V - 3.3 V) x 0.3 A = 0.59 W
+at most.
+
+- C3, 10 uF at the input in both builds (DIY: 25 V radial electrolytic;
+  JLC: C301, 0805 X5R): one value that satisfies the LD1117 (100 nF), the
+  LM1117 and AZ1117 (10 uF) and the AMS1117 application circuit (10 uF). C4,
+  10 uF at the output (ST's figure; ST gives no ESR window).
+- With U2 fitted and the card on bench power only, M1 and M2 are unpowered
+  while the module runs.
+
+The module's regulator is the fallback (JP2 bridged on a board without
+U2), not the default: the ME6217C33M5G data sheet gives 800 mA as a typical
+IOUT(max) (and as the absolute maximum), no minimum, and notes it may not be
+reached because of package dissipation; it gives no thermal resistance. Its
+sibling ME6207 rates the SOT-23-5 package at 250 mW. The W5500 alone puts
+0.25-0.41 W into it, with an SD card 0.45-0.66 W. Measured with a thermal
+camera, module plus W5500 on the module's 3V3, room 20 C: nothing on the
+module above 40 C (no SD card in that measurement).
 
 There is no extra bulk capacitance on VIN or 3V3: it would slow the 3V3
 rise against the Amiga's +5 V ramp.
@@ -283,6 +365,14 @@ the firmware drives the chip select high as soon as it has configured its
 GPIOs, before it uses SPI1. The breakout carries four 10 k pull-ups of its
 own, on lines not identified.
 
+**J6, microSD socket (JLC build).** A Hirose DM3AT-SF-PEJM5 push-push socket
+(KiCad `Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5`) under M2's
+outline, on M2's nets, the card entering over the top edge as with M2: CS =
+DAT3 (GPIO18), MOSI = CMD, CLK, MISO = DAT0, VDD = 3V3_AUX. 10 k pull-ups R2
+(DAT2), R3 (CMD / MOSI), R4 (DAT0 / MISO), R5 (DAT1), none on CS; C5 100 nF
+and C6 10 uF at VDD. Card detect (pins 9, 10) is not connected: no GPIO is
+free. M2 and J6 are never both fitted.
+
 **M3, GY-PCM5102.** The 6-pin row on its short edge: SCK to GND (selects the
 PCM5102A's internal PLL), BCK to GPIO46, DIN to GPIO44, LCK to GPIO47, GND,
 VIN to VIN. Pin 1 is SCK. The 9-pin row (FLT, DEMP, XSMT, FMT, A3V3, AGND,
@@ -322,7 +412,9 @@ the board from the 6-pin row and 0.635 mm outside the SCK hole.
 - Edge connector: 2 x 50 gold fingers at 2.54 mm, orientation and geometry
   in `../EDGE_CONNECTOR.md`. ENIG with a 0.5 x 45 degree bevel on the
   finger edge is recommended; HASL works. The finger area is one open
-  solder-mask window by design.
+  solder-mask window by design. JLC's Economic PCBA offers no gold fingers:
+  ENIG without the bevel there, or Standard PCBA for hard-gold bevelled
+  fingers.
 - All parts go on the component side. The pin 1 / 2 end faces the rear panel
   on the Denise; the RJ45 and the USB-A socket go to that end. Tall parts
   sit high on the card, away from the fingers, to clear an accelerator; the
@@ -331,7 +423,7 @@ the board from the 6-pin row and 0.635 mm outside the SCK hole.
 - Heights above the PCB: M1 about 17.8 mm (2.54 mm header plastic + 1.6 mm
   PCB + 13.61 mm jack; the header plastic cannot be left out, the W5500 sits
   on the module's underside); U1 on its header plastic (parts on its
-  underside); U2, if fitted, lying down.
+  underside); U2 lying down.
 - **The tall parts do not clear a neighbouring card.** Free height to the
   next card's PCB is 13.6 mm on the Denise and 18.7 mm in an A2000, before
   that card's solder-side leads. M1 needs the adjacent slot on its side
@@ -373,10 +465,21 @@ slot, which is a 43.0 mm body; the One TH relies on the case for the rest.
 
 ## Open points
 
-- ME6217 temperature with an SD card fitted as well (40 C at most with M1
-  alone).
-- The 3V3 rise against the Amiga's +5 V ramp with M1 and M2 loading the
-  rail. Measured only for the bare module: 18.6 us.
+- U2 / U201 temperature at the full 3V3_AUX load (0.59 W at most, TO-220 or
+  SOT-223 on the 3V3_AUX copper area). The ME6217 with M1 and an SD card on
+  it applies only to a board without U2 (JP2 bridged): 40 C at most with M1
+  alone, and by its data sheet not a sound default.
+- The 3V3_AUX rise from U2 / U201 against the module's 3V3 and the Amiga's
+  +5 V ramp. Measured only for the bare module: 18.6 us.
+- The hot-plug droop figures (Power, Bulk) are a simulation with assumed
+  cable, rail and electrolytic ESR values, not a measurement.
+- JLC build: U201's loop with R6 + C401 next to C6 and the W5500 module's
+  own ceramics (to be checked with a scope on the first board); the port
+  droop with the MLCC banks at hot-plug; the CPL rotations (corrections of
+  kicad-jlcpcb-tools, to be checked in JLC's DFM preview); the 3V3_AUX rise
+  from U201 against the module's 3V3.
+- Q101: an MMBT3904 in place of the simulated 2N3904 (a PMBT3904 model was
+  among those simulated).
 - /LDS: the firmware ignoring /LDS is tested on a Denise (register test,
   network, USB and Autoconfig after a reset unchanged), but not yet with
   the pin physically unconnected.
@@ -419,7 +522,11 @@ slot, which is a 43.0 mm body; the One TH relies on the case for the rest.
 - Intel 815E Platform Design Guide (reference board sheet 21): https://download.intel.com/design/chipsets/designex/29823401.pdf
 - RUEF: https://www.littelfuse.com/assetdocs/resettable-ptc-ruef-datasheet?assetguid=2139d828-f887-4a2a-9b25-01ddf761ab3a
 - MF-R: https://www.bourns.com/docs/Product-Datasheets/mfr.pdf
-- LD1117: https://www.st.com/resource/en/datasheet/ld1117.pdf
+- LD1117 (DocID2572 Rev 38, Table 6): https://www.st.com/resource/en/datasheet/ld1117.pdf
+- AMS1117: http://www.advanced-monolithic.com/pdf/ds1117.pdf
+- ME6217 data sheet V02: https://datasheet.lcsc.com/datasheet/pdf/3d38df48f5744f9f5473666520a2674d.pdf
+- ME6207 data sheet V04 (SOT-23-5 dissipation, p. 4): https://datasheet.lcsc.com/datasheet/pdf/bd2fb8a7d19717c941ded5ee758d36c9.pdf
+- SD Physical Layer Simplified Specification v3.01 (Table 3-4): https://www.cs.utexas.edu/~simon/378/resources/Part_1_Physical_Layer_Simplified_Specification_Ver_3.01_Final_100518.pdf
 - LF33: https://www.st.com/resource/en/datasheet/lfxx.pdf
 - PCM5102A: https://www.ti.com/lit/ds/symlink/pcm5102a.pdf
 - GY-PCM5102 (community drawing): https://macsbug.wordpress.com/2021/02/19/web-radio-of-m5stack-pcm5102a-i2s-dac/

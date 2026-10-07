@@ -1,15 +1,26 @@
 3D models of the PicoZorro One TH board (referenced as ${KIPRJMOD}/3d/*.step)
 
-PCM5102-I2S.step (M3, GY-PCM5102 board), copied unchanged
-  from    https://github.com/sstojos/zynthian-miniature, commit 872788b6b438185327aa1d910883230fe8f35ef5,
-          file PCM5102-I2S.step (by Stojos, the same project as the GY-PCM5102 footprint the board
-          outline follows)
-  licence GPL-3.0 (the repository's LICENSE, copied as LICENSE-zynthian-miniature.txt)
-  deviation: its board is 16.9 mm across (17.0 drawn) and its jack ends 1.1 mm past that edge
-          (1.5 in the footprint the outline follows): 0.5 mm short of the drawn jack
+core2350b.step, w5500-lite.step, microsd-breakout.step, gy-pcm5102.step, ptc-radial.step
+  Part of this project, modelled with build123d (Apache-2.0). The board slabs, the M3 jack and F1 are
+  drawn from the makers' dimensions and the measurements in ../README.md. No maker model exists:
+  Waveshare's Core2350B wiki has a schematic and demo files only, WIZnet's WIZ850io page schematics
+  only, the microSD and GY-PCM5102 breakouts have no maker, and KiCad's library has no model for the
+  radial PTC footprint F1 uses (Fuse_Bourns_MF-RHT070 names a file KiCad does not ship).
 
-core2350b.step, w5500-lite.step, microsd-breakout.step, ptc-radial.step
-  part of this project, modelled with build123d from the makers' dimensions and the measurements
-  in ../README.md. No maker model exists: Waveshare's Core2350B wiki has a schematic and demo
-  files only, WIZnet's WIZ850io page schematics only, the microSD breakout has no maker, and
-  KiCad 10's library has no model for Fuse_Bourns_MF-RHT070.
+KiCad library models built into them (KiCad 3D library, tag 10.0.6,
+https://gitlab.com/kicad/libraries/kicad-packages3D)
+  Connector_RJ.3dshapes/RJ45_Molex_9346520x_Horizontal.step      in w5500-lite.step
+      shape stand-in for the module's HanRun HR961160C: KiCad's library has no HanRun model. The
+      Molex 93465 is the same body class (tab-up magjack with LEDs, 16.2 x 25.4 x 14.1 against 16.1 x
+      25.4 x 13.61); its springs sit behind the module edge, the HR961160C's at the front; it has no
+      LEDs, so the HR961160C's two LED windows are added on its face
+  Connector_Card.3dshapes/microSD_HC_Hirose_DM3AT-SF-PEJM5.step  in microsd-breakout.step
+  Package_SO.3dshapes/TSSOP-20_4.4x6.5mm_P0.65mm.step            in gy-pcm5102.step (the PCM5102A)
+  Licence: CC-BY-SA 4.0 with the KiCad library exception (https://www.kicad.org/libraries/license/):
+  "To the extent that the creation of electronic designs that use 'Licensed Material' can be considered
+  to be 'Adapted Material', then the copyright holder waives article 3 of the license with respect to
+  these designs and any generated files which use data provided as part of the 'Licensed Material'."
+
+Referenced from the board, not copied: F101 carries
+  ${KICAD10_3DMODEL_DIR}/Capacitor_SMD.3dshapes/C_1812_4532Metric.step scaled to 2.0 mm high, the same
+  4.5 x 3.2 body on the same pads: KiCad ships no 1812 fuse model.
